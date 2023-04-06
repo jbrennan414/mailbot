@@ -1,11 +1,16 @@
+import datetime
 from tinydb import TinyDB, Query
 db = TinyDB('db.json')
 
-def retrieve():
-  f = db.all()
-  print(f)
+def did_text_today():
+  Record = Query()
+  today = datetime.date.today().strftime("%Y-%m-%d")
+  f = db.search(Record.date == today)
+  if not f:
+    return False
+  return True
 
-retrieve()
+print(did_text_today())
 
 # Every minute
 
