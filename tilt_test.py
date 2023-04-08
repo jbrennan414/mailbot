@@ -1,19 +1,10 @@
-import RPi.GPIO as GPIO
+import time
+import board
+import digitalio
+import adafruit_lis3dh
+i2c = board.I2C()
+int1 = digitalio.DigitalInOut(board.D6)  # Set this to the correct pin for the interrupt!
+lis3dh = adafruit_lis3dh.LIS3DH_I2C(i2c, int1=int1)
 
-channel = 21
-GPIO.setmode(GPIO.BCM)
-GPIO.setup(channel, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-
-def alert(ev=None):
-  print("Tilt detected")
-
-def loop():
-  GPIO.add_event_detect(channel, GPIO.FALLING, callback=alert, bouncetime=100)
-  while True:
-    pass
-
-if __name__ == '__main__':
-  try:
-    loop()
-  except KeyboardInterrupt:
-    GPIO.cleanup()
+x, y, z = lis3dh.acceleration
+print(x,y,z)
