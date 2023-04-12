@@ -4,37 +4,43 @@ import board
 import busio
 import digitalio
 import adafruit_lis3dh
-import adafruit_vcnl4010
 import json
 import os
 import webbrowser
 import requests
+import adafruit_vl53l4cd
 
 from tinydb import TinyDB, Query
 db = TinyDB('db.json')
 now = datetime.now()
+
 
 def did_text_today():
   Record = Query()
   today = now.strftime("%Y-%m-%d")
   f = db.search(Record.date == today)
   if not f:
-    return False
-  return True
+    print("We did not text today")
+    return True
+  print("We have texted today")
+  return False
 
 def check_for_mail():
-  i2c = busio.I2C(board.SCL, board.SDA)
-  sensor = adafruit_vcnl4010.VCNL4010(i2c)
-  mailboxDepth = 3000 # We will change this later
-  proximity = int(format(sensor.proximity))
+  i2c = board.I2C()
+  vl53 = adafruit_vl53l4cd.VL53L4CD(i2c)
+  vl53.start_ranging()
+  mailboxDepth = 13 # we will change this later
 
-  if proximity > mailboxDepth:
-    print("we have mail")
+  while not vl53.data_ready:
+    pass
+  vl53.clear_interrupt()
+
+  if mailboxDepth > vl53.distance:
+    print("you've got mail")
+    return True
   else:
-    print("we dont have mail")
-
-  print('Proximity: {0}'.format(sensor.proximity))
-  print('Ambient light: {0} lux'.format(sensor.ambient_lux))
+    print("no mail yet")
+    return False
 
 def is_flag_raised():
   i2c = board.I2C()
@@ -42,7 +48,13 @@ def is_flag_raised():
   lis3dh = adafruit_lis3dh.LIS3DH_I2C(i2c, int1=int1)
 
   x,y,z = lis3dh.acceleration
-  print(x,y,z)
+
+  flag_fudge_factor = 4
+
+  if abs(x) < flag_fudge_factor:
+    return True
+  else:
+    return False
 
 def send_text():
   api_url = "https://0v17ybsk9g.execute-api.us-west-2.amazonaws.com/prod/mailbot"
@@ -58,17 +70,18 @@ def send_text():
 # Every minute
 
 # Check for mail (laser)
-check_for_mail()
+#check_for_mail()
 
 # Is flag raised?
-is_flag_raised()
+#is_flag_raised()
 
 # Check to see if we've texted Cole today
-did_text_today()
+#did_text_today()
 
 # Call rest api
-send_text()
+#send_text()
 
-
-# If 200, add to tinydb
-print(db.all())
+if all([check_for_mail(), did_text_today(), is_flag_raised()]):
+  print("all systems GOOO")
+else:
+  print("all systems NOOOO")
