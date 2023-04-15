@@ -1,3 +1,5 @@
+from dotenv import load_dotenv
+load_dotenv()
 from datetime import datetime
 import time
 import board
@@ -29,6 +31,7 @@ def check_for_mail():
   i2c = board.I2C()
   vl53 = adafruit_vl53l4cd.VL53L4CD(i2c)
   vl53.start_ranging()
+  
   mailboxDepth = 13 # we will change this later
 
   while not vl53.data_ready:
@@ -58,7 +61,8 @@ def is_flag_raised():
 
 def send_text():
   api_url = "https://0v17ybsk9g.execute-api.us-west-2.amazonaws.com/prod/mailbot"
-  response = requests.get(api_url)
+  headers = {'x-api-key': os.environ.get("API_KEY")} # I won't need to send this to Cole if I mail him the pi
+  response = requests.get(api_url, headers=headers)
   json_response = json.loads(response.text)
   statusCode = json_response["statusCode"]
   if statusCode == 200:
@@ -67,21 +71,8 @@ def send_text():
     db.insert({'date':today, 'time':current_time})
 
 
-# Every minute
-
-# Check for mail (laser)
-#check_for_mail()
-
-# Is flag raised?
-#is_flag_raised()
-
-# Check to see if we've texted Cole today
-#did_text_today()
-
-# Call rest api
-#send_text()
-
 if all([check_for_mail(), did_text_today(), is_flag_raised()]):
   print("all systems GOOO")
+  send_text()
 else:
   print("all systems NOOOO")
