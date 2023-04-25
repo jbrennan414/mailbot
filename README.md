@@ -9,3 +9,5 @@
 7. ~~Get a tilt sensor working, in tandem with the laser? Otherwise we need to use an accelerometer~~
 8. Setup solar power
 9. Figure out how to do database dumps, so Cole can put data on r/dataisbeautiful
+
+`sudo nano /lib/systemd/system/myservice.service`
